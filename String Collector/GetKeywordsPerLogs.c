@@ -6,6 +6,8 @@
 
 int main(){
 
+    FILE *input = fopen(); //complete this tomorrow
+
 
 
 
