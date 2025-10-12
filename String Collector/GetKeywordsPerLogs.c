@@ -6,10 +6,13 @@
 
 int main(){
 
-    FILE *input = fopen(); //complete this tomorrow
+    FILE *input = fopen("C:\\Users\\Cheenee\\OneDrive\\Desktop\\Converge\\stringcollector\\file.txt", "r");
+    FILE *output = fopen("C:\\Users\\Cheenee\\OneDrive\\Desktop\\Converge\\stringcollector\\output.txt", "w");
 
+    if (input == NULL || output == NULL)
+        printf("Missing File in the Drive");
+        fclose(file);
 
-
-
+        
     return 0;
 }
