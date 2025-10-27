@@ -1,0 +1,504 @@
+/*function onOpen() {
+  const ui = SpreadsheetApp.getUi();
+  ui.createMenu('Jira Upload')
+    .addItem('Upload to Jira', 'jiraUpload')
+    .addItem('Test Columns', 'testColumns')
+    .addToUi();
+}
+*/
+function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu("🚀 Jira Tools")
+    .addItem("⬆️ Upload to Jira", "jiraUpload")
+    .addToUi();
+}
+
+function jiraUpload() {
+  try {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+
+    // Check if sheet has data
+    if (!sheet.getLastRow() || sheet.getLastRow() === 1) {
+      SpreadsheetApp.getActive().toast('No data found to process');
+      return;
+    }
+
+    // Column mappings
+    const subscriberNameCol = headers.indexOf("Subscriber Name");
+    const branchCol = headers.indexOf("Branch");
+    const salesRemarksCol = headers.indexOf("Sales Remarks");
+    const accountNumberCol = headers.indexOf("Account Number"); 
+    const joNumberCol = headers.indexOf("Jo Number"); 
+    const joCreatedCol = headers.indexOf("JO Created"); /*
+    const poiCol = headers.indexOf("POI");
+    const targetRFSCol = headers.indexOf("Target RFS Date");
+    const napAssignmentCol = headers.indexOf("NAP Assignment");
+    const acceptancePeriodCol = headers.indexOf("Acceptance Period (Days)");
+    const contractPeriodCol = headers.indexOf("Contract Period (Months)");
+    const rtsCol = headers.indexOf("RTS #");
+    const packageCol = headers.indexOf("Package");
+    const productTypeCol = headers.indexOf("Product Type");
+    const serviceTypeCol = headers.indexOf("Service Type");
+    const serviceSubTypeCol = headers.indexOf("Service Sub Type");
+    const bandwidthMinCol = headers.indexOf("Bandwidth Min");
+    const bandwidthMaxCol = headers.indexOf("Bandwidth Max");
+    const bandwidthTypeCol = headers.indexOf("Bandwidth Type");
+    const installationTypeCol = headers.indexOf("Installation Type");
+    const usdPhpCol = headers.indexOf("USD/PHP");
+    const oldMrcCol = headers.indexOf("Old MRC");
+    const mrcCol = headers.indexOf("MRC");
+    const otcCol = headers.indexOf("OTC");
+    const incrementMrcCol = headers.indexOf("Increment MRC");
+    const incrementalOtcCol = headers.indexOf("Incremental OTC");
+    const applicableTaxesCol = headers.indexOf("Applicable Taxes");
+    const industryCol = headers.indexOf("Industry");
+    const siteAAddressCol = headers.indexOf("Site A Address");
+    const buildingSiteACol = headers.indexOf("Building (Site A)");
+    const citySiteACol = headers.indexOf("City/Municipality (Site A)");
+    const regionCol = headers.indexOf("Region");
+    const classificationSiteACol = headers.indexOf("Classification (Site A)");
+    const siteBAddressCol = headers.indexOf("Site B Address");
+    const buildingSiteBCol = headers.indexOf("Building (Site B)");
+    const citySiteBCol = headers.indexOf("City/Municipality (Site B)");
+    const classificationSiteBCol = headers.indexOf("Classification (Site B)");
+    const keyAccountManagerCol = headers.indexOf("Key Account Manager");
+    const salesTeamCol = headers.indexOf("Sales Team");
+    const businessTypeCol = headers.indexOf("Business Type");
+    const kamUnitHeadCol = headers.indexOf("KAM UNIT HEAD");
+    const technicalContactPersonCol = headers.indexOf("Technical Contact Person/(SPOC)");
+    const spocDesignationCol = headers.indexOf("SPOC Designation");
+    const spocContactNoCol = headers.indexOf("SPOC Contact No.");
+    const spocEmailAddCol = headers.indexOf("SPOC Email Add"); */
+    const statusCol = headers.indexOf("Status");
+    const workItemCol = headers.indexOf("Work Item");
+
+    console.log('Column indexes mapped successfully.');
+
+    // Validate required columns
+    if (accountNumberCol === -1) throw new Error("Account Number column not found");
+    if (joNumberCol === -1) throw new Error("Jo Number column not found");
+    if (statusCol === -1) throw new Error("Status column not found");
+    if (workItemCol === -1) throw new Error("Work Item column not found");
+
+    const scriptProps = PropertiesService.getScriptProperties();
+    const email = scriptProps.getProperty("JIRA_EMAIL");
+    const apiToken = scriptProps.getProperty("JIRA_TOKEN");
+
+    if (!email || !apiToken) {
+      throw new Error("Missing JIRA_EMAIL or JIRA_TOKEN in Script Properties");
+    }
+
+    const jiraDomain = "https://convergeict-sandbox-467.atlassian.net";
+    const serviceDeskId = "630";
+    const requestTypeId = "1060";
+
+    let processedCount = 0;
+    let successCount = 0;
+    let errorCount = 0;
+/*
+    // Helper to format date from mm/dd/yyyy to YYYY-MM-DD
+    function formatDate_(value) {
+      if (!value) return "";
+      try {
+        // If it's already a Date object
+        if (value instanceof Date) {
+          if (isNaN(value.getTime())) return "";
+          return Utilities.formatDate(value, Session.getScriptTimeZone(), "yyyy-MM-dd");
+        }
+        
+        // If it's a string in mm/dd/yyyy format
+        const dateString = String(value).trim();
+        if (dateString.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
+          const [month, day, year] = dateString.split('/').map(Number);
+          const date = new Date(year, month - 1, day); // month is 0-indexed in JavaScript
+          if (isNaN(date.getTime())) return "";
+          return Utilities.formatDate(date, Session.getScriptTimeZone(), "yyyy-MM-dd");
+        }
+        
+        // For other date formats, let JavaScript handle it
+        const date = new Date(value);
+        if (isNaN(date.getTime())) return "";
+        return Utilities.formatDate(date, Session.getScriptTimeZone(), "yyyy-MM-dd");
+        
+      } catch (e) {
+        console.warn("Invalid date value:", value, e.toString());
+        return "";
+      }
+    }
+*/
+
+  function formatDate_(value) {
+    const DEFAULT_DATE = "1970-12-31";
+
+    if (!value) return DEFAULT_DATE;
+    try {
+      // If it's already a Date object
+      if (value instanceof Date) {
+        if (isNaN(value.getTime())) return DEFAULT_DATE;
+        return Utilities.formatDate(value, Session.getScriptTimeZone(), "yyyy-MM-dd");
+      }
+
+      // If it's a string in mm/dd/yyyy format
+      const dateString = String(value).trim();
+      if (dateString.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
+        const [month, day, year] = dateString.split('/').map(Number);
+        const date = new Date(year, month - 1, day); // month is 0-indexed in JavaScript
+        if (isNaN(date.getTime())) return DEFAULT_DATE;
+        return Utilities.formatDate(date, Session.getScriptTimeZone(), "yyyy-MM-dd");
+      }
+
+      // For other date formats, let JavaScript handle it
+      const date = new Date(value);
+      if (isNaN(date.getTime())) return DEFAULT_DATE;
+      return Utilities.formatDate(date, Session.getScriptTimeZone(), "yyyy-MM-dd");
+
+    } catch (e) {
+      console.warn("Invalid date value:", value, e.toString());
+      return DEFAULT_DATE;
+    }
+  }
+
+    // Process each row
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      
+      // Skip if already processed or missing subscriber name
+      if (row[statusCol] || !row[subscriberNameCol]) {
+        console.log(`Skipping row ${i + 1} - already processed or missing subscriber name`);
+        continue;
+      }
+
+      console.log(`Processing row ${i + 1}:`, {
+        subscriberName: row[subscriberNameCol], 
+        branch: row[branchCol],
+        salesRemarks: row[salesRemarksCol],
+        accountNumber: row[accountNumberCol], 
+        joNumber: row[joNumberCol], 
+        joCreated: row[joCreatedCol] /*
+        targetRFS: row[targetRFSCol],
+        napAssignment: row[napAssignmentCol],
+        acceptancePeriod: row[acceptancePeriodCol],
+        contractPeriod: row[contractPeriodCol],
+        rts: row[rtsCol],
+        package: row[packageCol],
+        productType: row[productTypeCol],
+        serviceType: row[serviceTypeCol],
+        serviceSubType: row[serviceSubTypeCol], 
+        bandwidthMin: row[bandwidthMinCol],
+        bandwidthMax: row[bandwidthMaxCol],
+        bandwidthType: row[bandwidthTypeCol],
+        installationType: row[installationTypeCol],
+        usdPhp: row[usdPhpCol],
+        oldMrc: row[oldMrcCol],
+        mrc: row[mrcCol],
+        otc: row[otcCol],
+        incrementMrc: row[incrementMrcCol],
+        incrementalOtc: row[incrementalOtcCol],
+        applicableTaxes: row[applicableTaxesCol],
+        industry: row[industryCol],
+        siteAAddress: row[siteAAddressCol],
+        buildingSiteA: row[buildingSiteACol],
+        citySiteA: row[citySiteACol],
+        region: row[regionCol],
+        classificationsiteA: row[classificationSiteACol],
+        siteBAddress: row[siteBAddressCol],
+        buildingSiteB: row[buildingSiteBCol],
+        citySiteB: row[citySiteBCol],
+        classificationSiteB: row[classificationSiteBCol],
+        keyAccountManager: row[keyAccountManagerCol],
+        salesTeam: row[salesTeamCol],
+        businessType: row[businessTypeCol],
+        kamUnitHead: row[kamUnitHeadCol],
+        technicalContactPerson: row[technicalContactPersonCol],
+        spocDesignation: row[spocDesignationCol],
+        spocContactNo: row[spocContactNoCol],
+        spocEmailAdd: row[spocEmailAddCol] */
+      });
+
+      // Build payload with proper date formatting
+      const payload = {
+        serviceDeskId: serviceDeskId,
+        requestTypeId: requestTypeId,
+        requestFieldValues: {
+          customfield_11682: String(row[subscriberNameCol] || ""),  // Subscriber Name
+          customfield_11683: String(row[branchCol] || ""),          // Branch
+          customfield_11684: String(row[salesRemarksCol] || ""),    // Sales Remarks
+          customfield_11685: String(row[accountNumberCol] || ""),    // Account Number
+          customfield_11686: String(row[joNumberCol] || ""),        // Jo Number
+          customfield_11687: formatDate_(row[joCreatedCol])/*,        // JO Created (Date)
+          customfield_11831: String(row[poiCol] || ""),             // POI
+          customfield_11689: formatDate_(row[targetRFSCol]),    // Target RFS Date (Date)
+          customfield_11690: String(row[napAssignmentCol]),     // NAP Assignment (Date)
+          customfield_11691: String(row[acceptancePeriodCol] || ""), // Acceptance Period (Days)
+          customfield_11692: String(row[contractPeriodCol] || ""),   // Contract Period (Months)
+          customfield_11693: String(row[rtsCol] || ""),              // RTS #
+          customfield_11846: String(row[packageCol] || ""),          // Package
+          customfield_11836: String(row[productTypeCol] || ""),      // Product Type
+          customfield_11837: String(row[serviceTypeCol] || ""),      // Service Type
+          customfield_11838: String(row[serviceSubTypeCol] || ""),   // Servie Sub-Type 
+          customfield_11697: String(row[bandwidthMinCol] || ""),     // Bandwidth Min
+          customfield_11728: String(row[bandwidthMaxCol] || ""),     // Bandwidth Max
+          customfield_11839: String(row[bandwidthTypeCol] || ""),    // Bandwidth Type
+          customfield_11840: String(row[installationTypeCol] || ""), // Installation Type
+          customfield_11841: String(row[usdPhpCol] || ""),           // USD/PHP
+          customfield_11703: String(row[oldMrcCol] || ""),              // Old MRC
+          customfield_11704: String(row[mrcCol] || ""),              // MRC
+          customfield_11705: String(row[otcCol] || ""),              // OTC
+          customfield_11706: String(row[incrementMrcCol] || ""),     // Increment MRC     
+          customfield_11707: String(row[incrementalOtcCol] || ""),   // Incremental OTC
+          customfield_11842: String(row[applicableTaxesCol] || ""),  // Applicable Taxes
+          customfield_11843: String(row[industryCol] || ""),         // Industry
+          customfield_11710: String(row[siteAAddressCol] || ""),     // Site A Address
+          customfield_11878: String(row[regionCol] || ""),           // Region
+          customfield_11879: String(row[classificationSiteACol] || ""), // Classification (Site A)
+          customfield_11715: String(row[siteBAddressCol] || ""),     // Site B Address
+          customfield_11711: String(row[buildingSiteACol] || ""),    // Building (Site A)
+          customfield_11716: String(row[buildingSiteBCol] || ""),    // Building (Site B)
+          customfield_11876: String(row[citySiteACol] || ""),        // City/Municipality (Site A)
+          customfield_11877: String(row[citySiteBCol] || ""),        // City/Municipality (Site B)
+          customfield_11880: String(row[classificationSiteBCol] || ""), // Classification (Site B)
+          customfield_11832: String(row[keyAccountManagerCol] || ""),// Key Account Manager
+          customfield_11844: String(row[salesTeamCol] || ""),        // Sales Team
+          customfield_11845: String(row[businessTypeCol] || ""),     // Business Type
+          customfield_11833: String(row[kamUnitHeadCol] || ""),      // KAM UNIT HEAD
+          customfield_11724: String(row[technicalContactPersonCol] || ""), // Technical Contact Person
+          customfield_11725: String(row[spocDesignationCol] || ""),  // SPOC Designation
+          customfield_11726: String(row[spocContactNoCol] || ""),    // SPOC Contact No
+          customfield_11727: String(row[spocEmailAddCol] || "")      // SPOC Email Add  */
+        }
+      };
+
+      console.log('Formatted dates:', {
+        joCreated: formatDate_(row[joCreatedCol]),
+        targetRFS: formatDate_(row[targetRFSCol])
+      });
+
+      console.log('Payload being sent:', JSON.stringify(payload, null, 2));
+
+      const options = {
+        method: "post",
+        contentType: "application/json",
+        payload: JSON.stringify(payload),
+        headers: {
+          Authorization: "Basic " + Utilities.base64Encode(email + ":" + apiToken),
+          Accept: "application/json"
+        },
+        muteHttpExceptions: true
+      };
+
+      try {
+        processedCount++;
+        const url = `${jiraDomain}/rest/servicedeskapi/request`;
+        const response = UrlFetchApp.fetch(url, options);
+        const code = response.getResponseCode();
+        const responseText = response.getContentText();
+
+        console.log(`Response Code: ${code}`);
+        console.log(`Full Response: ${responseText}`);
+
+        if (code === 201) {
+          const resData = JSON.parse(responseText);
+          const issueKey = resData.issueKey || resData.key || "N/A";
+
+          sheet.getRange(i + 1, statusCol + 1).setValue("Pass");
+          sheet.getRange(i + 1, workItemCol + 1).setValue(issueKey);
+          successCount++;
+          console.log(`✅ Created Jira issue: ${issueKey}`);
+        } else {
+          errorCount++;
+          let errorDetail = "Unknown error";
+          try {
+            const errorData = JSON.parse(responseText);
+            errorDetail = errorData.message || JSON.stringify(errorData.errors || errorData, null, 2);
+          } catch (e) {
+            errorDetail = responseText.substring(0, 500);
+          }
+          
+          console.error(`❌ API Error ${code}:`, errorDetail);
+          
+          let userMessage = `Fail (${code})`;
+          if (code === 401) userMessage = "Fail: Authentication Error";
+          else if (code === 403) userMessage = "Fail: Permission Denied";
+          else if (code === 404) userMessage = "Fail: Service Desk Not Found";
+          else if (code === 429) userMessage = "Fail: Rate Limit Exceeded";
+          
+          sheet.getRange(i + 1, statusCol + 1).setValue(userMessage);
+          sheet.getRange(i + 1, workItemCol + 1).setValue(errorDetail.substring(0, 100));
+        }
+
+
+        try {
+          const response = UrlFetchApp.fetch(url, options);
+          const responseCode = response.getResponseCode();
+          const responseBody = response.getContentText();
+
+          Logger.log("Response Code: " + responseCode);
+          Logger.log("Full Response: " + responseBody);
+
+          // Extra detail: decode error
+          if (responseCode !== 201) {
+            const errorData = JSON.parse(responseBody);
+            if (errorData.i18nErrorMessage) {
+              Logger.log("Error Key: " + errorData.i18nErrorMessage.i18nKey);
+              Logger.log("Error Parameters: " + JSON.stringify(errorData.i18nErrorMessage.parameters));
+            }
+          }
+
+        } catch (e) {
+          Logger.log("Error occurred: " + e);
+        }
+
+
+        // Add delay to avoid rate limiting
+        Utilities.sleep(1000);
+
+      } catch (error) {
+        errorCount++;
+        console.error(`❌ Exception on row ${i + 1}:`, error);
+        sheet.getRange(i + 1, statusCol + 1).setValue(`Error: ${error.message.substring(0, 100)}`);
+      }
+    }
+
+    const message = `Upload completed. Processed: ${processedCount}, Success: ${successCount}, Errors: ${errorCount}`;
+    console.log(message);
+    SpreadsheetApp.getActive().toast(message, "Jira Upload Complete", 10);
+
+  } catch (error) {
+    console.error("Script error:", error);
+    SpreadsheetApp.getActive().toast(`Script error: ${error.message}`, "Error", 10);
+  }
+}
+
+function testColumns() {
+  try {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    const headers = sheet.getDataRange().getValues()[0];
+    
+    const requiredColumns = [
+      "Subscriber Name", "Branch", "Sales Remarks", "Account Number", 
+      "Jo Number", "JO Created", "POI", "Target RFS Date", "NAP Assignment", 
+      "Status", "Work Item"
+    ];
+    
+    let results = "Column Analysis:\n\n";
+    
+    requiredColumns.forEach(column => {
+      const index = headers.indexOf(column);
+      if (index !== -1) {
+        results += `✅ ${column}: Column ${index + 1}\n`;
+      } else {
+        results += `❌ ${column}: NOT FOUND\n`;
+      }
+    });
+    
+    console.log(results);
+    SpreadsheetApp.getActive().toast('Column analysis complete. Check logs.', "Test Columns", 5);
+    
+  } catch (error) {
+    console.error("Test Columns error:", error);
+    SpreadsheetApp.getActive().toast('Error testing columns. Check logs.', "Error", 5);
+  }
+}
+
+
+///////
+
+function testSimpleRequest() {
+  const scriptProps = PropertiesService.getScriptProperties();
+  const email = scriptProps.getProperty("JIRA_EMAIL");
+  const apiToken = scriptProps.getProperty("JIRA_TOKEN");
+  const jiraDomain = "https://convergeict-sandbox-467.atlassian.net";
+
+  // Absolute minimum payload
+  const payload = {
+    serviceDeskId: "630",
+    requestTypeId: "1060",
+    requestFieldValues: {
+      customfield_11682: "Test Subscriber Name",
+      customfield_11685: "TEST-ACC-001",
+      customfield_11686: "TEST-JO-001"
+    }
+  };
+
+  console.log('Testing with:', JSON.stringify(payload, null, 2));
+
+  const options = {
+    method: "post",
+    contentType: "application/json",
+    payload: JSON.stringify(payload),
+    headers: {
+      Authorization: "Basic " + Utilities.base64Encode(email + ":" + apiToken),
+      Accept: "application/json"
+    },
+    muteHttpExceptions: true
+  };
+
+  const url = `${jiraDomain}/rest/servicedeskapi/request`;
+  const response = UrlFetchApp.fetch(url, options);
+  const code = response.getResponseCode();
+  const responseText = response.getContentText();
+
+  console.log(`Response Code: ${code}`);
+  console.log(`Response: ${responseText}`);
+}
+
+
+function identifyUserPickerField() {
+  const scriptProps = PropertiesService.getScriptProperties();
+  const email = scriptProps.getProperty("JIRA_EMAIL");
+  const apiToken = scriptProps.getProperty("JIRA_TOKEN");
+  const jiraDomain = "https://convergeict-sandbox-467.atlassian.net";
+
+  const options = {
+    method: "get",
+    headers: {
+      Authorization: "Basic " + Utilities.base64Encode(email + ":" + apiToken),
+      Accept: "application/json"
+    },
+    muteHttpExceptions: true
+  };
+
+  // Get request type fields configuration
+  const url = `${jiraDomain}/rest/servicedeskapi/servicedesk/630/requesttype/1060/field`;
+  const response = UrlFetchApp.fetch(url, options);
+  const code = response.getResponseCode();
+  const responseText = response.getContentText();
+
+  console.log(`Fields API Response Code: ${code}`);
+  
+  if (code === 200) {
+    const fieldsData = JSON.parse(responseText);
+    console.log('=== CHECKING FOR USER PICKER FIELDS ===');
+    
+    let foundUserPicker = false;
+    
+    fieldsData.requestTypeFields.forEach(field => {
+      const isUserPicker = field.jiraSchema && 
+                          (field.jiraSchema.type === 'user' || 
+                           field.jiraSchema.type === 'array' && field.jiraSchema.items === 'user');
+      
+      if (isUserPicker) {
+        foundUserPicker = true;
+        console.log(`🚨 USER PICKER FOUND: ${field.fieldId} (${field.name})`);
+        console.log(`   Required: ${field.required}`);
+        console.log(`   Type: ${field.fieldType}`);
+        console.log(`   Schema: ${JSON.stringify(field.jiraSchema)}`);
+      }
+    });
+    
+    if (!foundUserPicker) {
+      console.log('No user picker fields found in configuration');
+      
+      // List all fields for reference
+      console.log('\n=== ALL FIELDS ===');
+      fieldsData.requestTypeFields.forEach(field => {
+        console.log(`${field.fieldId}: ${field.name} (${field.fieldType}) - Required: ${field.required}`);
+      });
+    }
+  } else {
+    console.log('Failed to get field configuration:', responseText);
+  }
+}
+
