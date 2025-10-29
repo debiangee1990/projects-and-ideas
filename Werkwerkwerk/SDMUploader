@@ -31,7 +31,7 @@ function jiraUpload() {
     const salesRemarksCol = headers.indexOf("Sales Remarks");
     const accountNumberCol = headers.indexOf("Account Number"); 
     const joNumberCol = headers.indexOf("Jo Number"); 
-    const joCreatedCol = headers.indexOf("JO Created"); /*
+    const joCreatedCol = headers.indexOf("JO Created");
     const poiCol = headers.indexOf("POI");
     const targetRFSCol = headers.indexOf("Target RFS Date");
     const napAssignmentCol = headers.indexOf("NAP Assignment");
@@ -176,7 +176,7 @@ function jiraUpload() {
         salesRemarks: row[salesRemarksCol],
         accountNumber: row[accountNumberCol], 
         joNumber: row[joNumberCol], 
-        joCreated: row[joCreatedCol] /*
+        joCreated: row[joCreatedCol]
         targetRFS: row[targetRFSCol],
         napAssignment: row[napAssignmentCol],
         acceptancePeriod: row[acceptancePeriodCol],
@@ -214,7 +214,7 @@ function jiraUpload() {
         technicalContactPerson: row[technicalContactPersonCol],
         spocDesignation: row[spocDesignationCol],
         spocContactNo: row[spocContactNoCol],
-        spocEmailAdd: row[spocEmailAddCol] */
+        spocEmailAdd: row[spocEmailAddCol]
       });
 
       // Build payload with proper date formatting
@@ -227,7 +227,7 @@ function jiraUpload() {
           customfield_11684: String(row[salesRemarksCol] || ""),    // Sales Remarks
           customfield_11685: String(row[accountNumberCol] || ""),    // Account Number
           customfield_11686: String(row[joNumberCol] || ""),        // Jo Number
-          customfield_11687: formatDate_(row[joCreatedCol])/*,        // JO Created (Date)
+          customfield_11687: formatDate_(row[joCreatedCol]),        // JO Created (Date)
           customfield_11831: String(row[poiCol] || ""),             // POI
           customfield_11689: formatDate_(row[targetRFSCol]),    // Target RFS Date (Date)
           customfield_11690: String(row[napAssignmentCol]),     // NAP Assignment (Date)
@@ -266,7 +266,7 @@ function jiraUpload() {
           customfield_11724: String(row[technicalContactPersonCol] || ""), // Technical Contact Person
           customfield_11725: String(row[spocDesignationCol] || ""),  // SPOC Designation
           customfield_11726: String(row[spocContactNoCol] || ""),    // SPOC Contact No
-          customfield_11727: String(row[spocEmailAddCol] || "")      // SPOC Email Add  */
+          customfield_11727: String(row[spocEmailAddCol] || "")      // SPOC Email Add
         }
       };
 
@@ -501,4 +501,3 @@ function identifyUserPickerField() {
     console.log('Failed to get field configuration:', responseText);
   }
 }
-
