@@ -1,0 +1,111 @@
+function doPost(e) {
+  try {
+    // Parse the incoming payload (fake Jira data for now)
+    var data = JSON.parse(e.postData.contents);
+
+    // Construct the payload for AppSheet
+    var payload = {
+      "Action": "Add",
+      "Rows": [data]
+    };
+
+    // AppSheet API configuration
+    var props = PropertiesService.getScriptProperties();
+    var appId = props.getProperty("APP_ID");
+    var tableName = props.getProperty("TABLE_NAME");
+    var apiKey = props.getProperty("API_KEY");
+
+    Logger.log("App ID: " + appId + " | Table: " + tableName + " | Key: " + apiKey);
+
+    var url = `https://api.appsheet.com/api/v2/apps/${appId}/tables/${tableName}/Action`;
+
+    var options = {
+      "method": "post",
+      "contentType": "application/json",
+      "headers": { "ApplicationAccessKey": apiKey },
+      "payload": JSON.stringify(payload),
+      "muteHttpExceptions": true
+    };
+
+    // Send the data to AppSheet
+    var response = UrlFetchApp.fetch(url, options);
+    Logger.log(response.getContentText());
+    Logger.log("Response Code: " + response.getResponseCode());
+    Logger.log("Response Text: " + response.getContentText());
+    Logger.log("Payload sent: " + JSON.stringify(payload));
+
+    return ContentService.createTextOutput("Success: " + response.getContentText())
+      .setMimeType(ContentService.MimeType.TEXT);
+  } catch (error) {
+    Logger.log(error);
+    return ContentService.createTextOutput("Error: " + error)
+      .setMimeType(ContentService.MimeType.TEXT);
+  }
+}
+
+// Space for testing
+function testDoPost() {
+  var fakeEvent = {
+    postData: {
+      contents: JSON.stringify({
+        "Timestamp": "2025-10-10T10:00:00Z",
+        "Jira Issue Key": "JIRA-123",
+        "Jira Issue ID": "10001",
+        "Summary": "Internet connection setup for new client",
+        "Status": "In Progress",
+        "Subscriber Name": "Acme Corp",
+        "Branch": "Makati",
+        "Sales Remarks/Instructions": "Priority installation",
+        "Account No": "ACC-2025-001",
+        "JO Number": "JO-7890",
+        "JO Created": "2025-10-09",
+        "POI": "Building A, 3rd Floor",
+        "Target RFS Date": "2025-10-20",
+        "NAP Assignment": "NAP-45",
+        "Acceptance Period (Days)": "5",
+        "Contract Period (Months)": "24",
+        "RTS #": "RTS-555",
+        "Package": "Business Fiber 500 Mbps",
+        "Product Type": "Fiber Internet",
+        "Service Type": "Enterprise",
+        "Service Sub-Type": "Dedicated Line",
+        "Bandwidth Min": "500",
+        "Bandwidth Max": "500",
+        "Bandwidth Type": "Mbps",
+        "Installation Type": "Onsite",
+        "USD/PHP": "PHP",
+        "Old MRC": "20000",
+        "MRC": "18000",
+        "OTC": "5000",
+        "Incremental MRC": "0",
+        "Incremental OTC": "0",
+        "Applicable Taxes": "12%",
+        "Industry": "Telecommunications",
+        "Site A Address": "123 Ayala Ave",
+        "Building (Site A)": "PBCom Tower",
+        "City/Municipality (Site A)": "Makati City",
+        "Region": "NCR",
+        "Classification": "Commercial",
+        "Site B Address": "45 Ortigas Ave",
+        "Building (Site B)": "Tektite Tower",
+        "City/Municipality (Site B)": "Pasig City",
+        "Classification (Site B)": "Business",
+        "Key Account Manager": "John Doe",
+        "Sales Team": "Enterprise Sales",
+        "Business Type": "B2B",
+        "KAM UNIT HEAD": "Jane Smith",
+        "Technical Contact Person/(SPOC)": "Mark Lee",
+        "SPOC Designation": "IT Head",
+        "SPOC Contact No.": "09171234567",
+        "SPOC Email Address": "mark.lee@acme.com",
+        "Updated At": "2025-10-10T11:00:00Z",
+        "Last Sync Result": "Pending"
+      })
+    }
+  };
+
+  // Call doPost() manually for testing
+  var result = doPost(fakeEvent);
+  Logger.log(result.getContent());
+  
+}
